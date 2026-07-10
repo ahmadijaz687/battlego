@@ -1,11 +1,16 @@
 {
-  "expo": {
+    "expo": {
     "name": "FitnessBattle",
-    "slug": "fitnessbattle",
+    "owner": "ahmad678345",
+    "slug": "ahmad",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "platforms": ["ios", "android", "web"],
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "sdkVersion": "52.0.0",
     "newArchEnabled": true,
     "jsEngine": "hermes",
@@ -15,7 +20,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#050505"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "updates": {
       "enabled": false,
       "checkAutomatically": "ON_ERROR_RECOVERY",
@@ -53,6 +60,7 @@
       "expo-secure-store",
       "@react-native-firebase/app",
       "./plugins/withNetworkSecurityConfig"
-    ]
+    ],
+    "owner": "ahmad678345s-team"
   }
 }
