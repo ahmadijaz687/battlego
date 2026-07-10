@@ -1,0 +1,16 @@
+export * from './apiClient';
+export * from './authService';
+export { searchExercises, createWorkout, createCustomWorkout, createWorkoutFromTemplate, getExercises, getExerciseLibrary, getTemplates, startWorkout, completeWorkout, addSection, addExercise, addSet, getCurrentSession, getWorkoutSession, completeSet, getPersonalRecords, getPersonalRecordsByExercise, getWorkoutHistory, getWorkoutById, getWorkoutAnalytics } from './workoutService';
+export * from './exerciseService';
+export * from './notificationService';
+export * from './profileService';
+export * from './gamificationService';
+export * from './battleService';
+export * from './habitService';
+export * from './healthService';
+export * from './socialService';
+export * from './nutritionService';
+export * from './aiService';
+export * from './syncService';
+export { haptic, setHapticEnabled } from './hapticService';
+export { sound, initSounds, setSoundEnabled, isSoundEnabled, unloadSounds } from './soundService';

@@ -1,0 +1,10 @@
+import { Router } from 'express';
+import { registerHandler, loginHandler, refreshHandler, logout } from '../controllers/authController.js';
+import { authLimiter } from '../middlewares/rateLimiter.js';
+import { validateLogin, validateRegister } from '../middlewares/validation.js';
+const router = Router();
+router.post('/register', authLimiter, validateRegister, registerHandler);
+router.post('/login', authLimiter, validateLogin, loginHandler);
+router.post('/refresh', authLimiter, refreshHandler);
+router.post('/logout', logout);
+export default router;

@@ -1,0 +1,14 @@
+import { Router } from 'express';
+import { getExercisesHandler, getTemplatesHandler, getWorkoutHistoryHandler, getPersonalRecordsHandler, getAnalyticsHandler, createWorkoutHandler, startWorkoutHandler, completeSetHandler, completeWorkoutHandler, } from '../controllers/workoutController.js';
+import { requireAuth } from '../middlewares/auth.js';
+const router = Router();
+router.get('/exercises', getExercisesHandler);
+router.get('/templates', getTemplatesHandler);
+router.get('/history', requireAuth, getWorkoutHistoryHandler);
+router.get('/records', requireAuth, getPersonalRecordsHandler);
+router.get('/analytics', requireAuth, getAnalyticsHandler);
+router.post('/', requireAuth, createWorkoutHandler);
+router.post('/:workoutId/start', requireAuth, startWorkoutHandler);
+router.post('/:workoutId/sets/:setId/complete', requireAuth, completeSetHandler);
+router.post('/:workoutId/complete', requireAuth, completeWorkoutHandler);
+export default router;

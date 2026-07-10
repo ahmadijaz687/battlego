@@ -1,0 +1,17 @@
+import { Router } from 'express';
+import { getConversationsHandler, getConversationHandler, createConversationHandler, addMessageHandler, deleteConversationHandler, togglePinHandler, generateWorkoutPlanHandler, findExerciseReplacementHandler, calculateProgressiveOverloadHandler, getRecoveryRecommendationsHandler, generateNutritionPlanHandler, chatReplyHandler, } from '../controllers/aiController.js';
+import { requireAuth } from '../middlewares/auth.js';
+const router = Router();
+router.get('/conversations', requireAuth, getConversationsHandler);
+router.get('/conversations/:conversationId', requireAuth, getConversationHandler);
+router.post('/conversations', requireAuth, createConversationHandler);
+router.post('/conversations/:conversationId/messages', requireAuth, addMessageHandler);
+router.delete('/conversations/:conversationId', requireAuth, deleteConversationHandler);
+router.patch('/conversations/:conversationId/pin', requireAuth, togglePinHandler);
+router.post('/workout', requireAuth, generateWorkoutPlanHandler);
+router.post('/replacement', requireAuth, findExerciseReplacementHandler);
+router.post('/overload', requireAuth, calculateProgressiveOverloadHandler);
+router.post('/recovery', requireAuth, getRecoveryRecommendationsHandler);
+router.post('/nutrition', requireAuth, generateNutritionPlanHandler);
+router.post('/chat', requireAuth, chatReplyHandler);
+export default router;

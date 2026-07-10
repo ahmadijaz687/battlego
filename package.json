@@ -1,0 +1,18 @@
+{
+  "name": "fitnessbattle",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "backend",
+    "packages/*"
+  ],
+  "scripts": {
+    "lint": "echo \"Root lint handled by packages\"",
+    "typecheck": "echo \"Root typecheck handled by packages\"",
+    "test": "echo \"Root tests handled by packages\""
+  },
+  "devDependencies": {
+    "@types/compression": "^1.8.1"
+  }
+}

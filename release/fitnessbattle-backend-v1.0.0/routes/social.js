@@ -1,0 +1,18 @@
+import { Router } from 'express';
+import { getFeedHandler, createPostHandler, getStoriesHandler, createStoryHandler, getFriendsHandler, getFriendRequestsHandler, sendFriendRequestHandler, getMessagesHandler, sendMessageHandler, getCommunitiesHandler, createCommunityHandler, getNotificationsHandler, markNotificationReadHandler, } from '../controllers/socialController.js';
+import { requireAuth } from '../middlewares/auth.js';
+const router = Router();
+router.get('/feed', requireAuth, getFeedHandler);
+router.post('/posts', requireAuth, createPostHandler);
+router.get('/stories', getStoriesHandler);
+router.post('/stories', requireAuth, createStoryHandler);
+router.get('/friends', requireAuth, getFriendsHandler);
+router.get('/friend-requests', requireAuth, getFriendRequestsHandler);
+router.post('/friend-requests', requireAuth, sendFriendRequestHandler);
+router.get('/messages', getMessagesHandler);
+router.post('/messages', requireAuth, sendMessageHandler);
+router.get('/communities', getCommunitiesHandler);
+router.post('/communities', requireAuth, createCommunityHandler);
+router.get('/notifications', requireAuth, getNotificationsHandler);
+router.patch('/notifications/:id/read', requireAuth, markNotificationReadHandler);
+export default router;

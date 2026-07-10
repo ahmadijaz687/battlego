@@ -1,0 +1,22 @@
+export * as authService from './authService.js';
+export * as workoutService from './workoutService.js';
+export * as nutritionService from './nutritionService.js';
+export * as socialService from './socialService.js';
+export * as aiService from './aiService.js';
+export * as battleService from './battleService.js';
+export * as challengeService from './challengeService.js';
+export * as gamificationService from './gamificationService.js';
+export * as habitService from './habitService.js';
+export * as healthService from './healthService.js';
+export * as profileService from './profileService.js';
+
+export * from './aiGenerationService.js';
+export * from './aiPersonality.js';
+export * from './orchestrator.js';
+export * from './llmProvider.js';
+export * from './proactiveCoach.js';
+export * from './aiContextBuilder.js';
+export * from './intentClassifier.js';
+export * from './knowledgeBase.js';
+export * from './ruleEngine.js';
+export * from './analyticsSummarizer.js';

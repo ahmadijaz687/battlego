@@ -1,0 +1,13 @@
+export { BaseRepository } from './BaseRepository.js';
+export { workoutRepository } from './WorkoutRepository.js';
+export { nutritionRepository } from './NutritionRepository.js';
+export { socialRepository } from './SocialRepository.js';
+export { aiRepository } from './AIRepository.js';
+export { authRepository } from './AuthRepository.js';
+export { battleRepository } from './BattleRepository.js';
+export { challengeRepository } from './ChallengeRepository.js';
+export { gamificationRepository } from './GamificationRepository.js';
+export { habitRepository } from './HabitRepository.js';
+export { healthRepository } from './HealthRepository.js';
+export { profileRepository } from './ProfileRepository.js';
+export { notificationRepository } from './NotificationRepository.js';

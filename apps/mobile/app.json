@@ -1,0 +1,58 @@
+{
+  "expo": {
+    "name": "FitnessBattle",
+    "slug": "fitnessbattle",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "platforms": ["ios", "android", "web"],
+    "sdkVersion": "52.0.0",
+    "newArchEnabled": true,
+    "jsEngine": "hermes",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#050505"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "updates": {
+      "enabled": false,
+      "checkAutomatically": "ON_ERROR_RECOVERY",
+      "fallbackToCacheTimeout": 0
+    },
+    "android": {
+      "package": "com.fitnessbattle.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#050505"
+      },
+      "googleServicesFile": "./google-services.json"
+    },
+    "ios": {
+      "bundleIdentifier": "com.fitnessbattle.app",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "googleServicesFile": "./GoogleService-Info.plist"
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "90fbb54e-28bb-44f1-a350-5acbe4483c0b"
+      },
+      "apiBaseUrl": "http://localhost:5000"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "@react-native-firebase/app",
+      "./plugins/withNetworkSecurityConfig"
+    ]
+  }
+}

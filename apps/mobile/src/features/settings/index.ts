@@ -1,0 +1,10 @@
+export { default as SettingsScreen } from '../../screens/SettingsScreen';
+export { default as ThemeScreen } from '../../screens/settings/ThemeScreen';
+export { default as LanguageScreen } from '../../screens/settings/LanguageScreen';
+export { default as UnitsScreen } from '../../screens/settings/UnitsScreen';
+export { default as NotificationsSettingsScreen } from '../../screens/settings/NotificationsScreen';
+export { default as PrivacyScreen } from '../../screens/settings/PrivacyScreen';
+export { default as SecurityScreen } from '../../screens/settings/SecurityScreen';
+export { default as AboutScreen } from '../../screens/settings/AboutScreen';
+export { default as SupportScreen } from '../../screens/settings/SupportScreen';
+export { default as BackupScreen } from '../../screens/settings/BackupScreen';

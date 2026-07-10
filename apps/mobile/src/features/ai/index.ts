@@ -1,0 +1,9 @@
+export { default as AIScreen } from '../../screens/ai/AIScreen';
+export { default as AIChatScreen } from '../../screens/ai/AIChatScreen';
+export { default as AIWorkoutGeneratorScreen } from '../../screens/ai/AIWorkoutGeneratorScreen';
+export { default as AINutritionPlannerScreen } from '../../screens/ai/AINutritionPlannerScreen';
+export { default as AIBodyAnalysisScreen } from '../../screens/ai/AIBodyAnalysisScreen';
+export { default as AIFoodAnalysisScreen } from '../../screens/ai/AIFoodAnalysisScreen';
+export { default as AIGoalPlannerScreen } from '../../screens/ai/AIGoalPlannerScreen';
+export { default as AIProgressAnalysisScreen } from '../../screens/ai/AIProgressAnalysisScreen';
+export { default as AISettingsScreen } from '../../screens/ai/AISettingsScreen';

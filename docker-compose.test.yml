@@ -1,0 +1,45 @@
+services:
+  db-test:
+    image: mysql:8.0
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: fitnessbattle_test
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    tmpfs:
+      - /var/lib/mysql
+    cap_add:
+      - SYS_NICE
+
+  test:
+    image: node:20-alpine
+    working_dir: /app
+    environment:
+      PORT: "5000"
+      HOST: 0.0.0.0
+      DATABASE_URL: mysql://root:rootpassword@db-test:3306/fitnessbattle_test
+      NODE_OPTIONS: --experimental-vm-modules
+      JWT_SECRET: fitnessbattle-test-secret-key-2024
+      JWT_EXPIRES_IN: 7d
+      REFRESH_EXPIRES_IN: 30d
+      CORS_ORIGIN: http://localhost:3000,http://localhost:8081
+      RATE_LIMIT_WINDOW_MS: "900000"
+      RATE_LIMIT_MAX: "100"
+      LOG_LEVEL: silent
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db-test:
+        condition: service_healthy
+    command: >
+      sh -c "
+        npm install --no-audit --no-fund &&
+        npx prisma generate &&
+        npm test
+      "

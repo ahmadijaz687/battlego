@@ -1,0 +1,56 @@
+{
+  "compilerOptions": {
+    "jsx": "react-native",
+    "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "types": [
+      "react",
+      "jest"
+    ],
+    "paths": {
+      "@mobile/*": [
+        "src/*"
+      ],
+      "@shared/*": [
+        "../../packages/shared/*"
+      ],
+      "@theme/*": [
+        "../../packages/theme/*"
+      ],
+      "@ui/*": [
+        "../../packages/ui/*"
+      ],
+      "@icons/*": [
+        "../../packages/icons/*"
+      ],
+      "@animations/*": [
+        "../../packages/animations/*"
+      ],
+      "@types/*": [
+        "../../packages/types/*"
+      ],
+      "@utils/*": [
+        "../../packages/utils/*"
+      ],
+      "@constants/*": [
+        "../../packages/constants/*"
+      ]
+    },
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": [
+      "ES2020",
+      "DOM"
+    ],
+    "resolveJsonModule": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src",
+    "src/types"
+  ],
+  "exclude": [
+    "node_modules"
+  ],
+  "extends": "expo/tsconfig.base"
+}

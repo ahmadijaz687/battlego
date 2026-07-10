@@ -1,0 +1,18 @@
+import { Router } from 'express';
+import { getFoodsHandler, createFoodHandler, getMealsHandler, createMealHandler, getWaterLogsHandler, createWaterLogHandler, getWeightLogsHandler, createWeightLogHandler, getMeasurementsHandler, createMeasurementHandler, getShoppingListHandler, createShoppingItemHandler, getAnalyticsHandler, } from '../controllers/nutritionController.js';
+import { requireAuth } from '../middlewares/auth.js';
+const router = Router();
+router.get('/foods', getFoodsHandler);
+router.post('/foods', createFoodHandler);
+router.get('/meals', requireAuth, getMealsHandler);
+router.post('/meals', requireAuth, createMealHandler);
+router.get('/water/logs', requireAuth, getWaterLogsHandler);
+router.post('/water/logs', requireAuth, createWaterLogHandler);
+router.get('/weight/logs', requireAuth, getWeightLogsHandler);
+router.post('/weight/logs', requireAuth, createWeightLogHandler);
+router.get('/measurements', requireAuth, getMeasurementsHandler);
+router.post('/measurements', requireAuth, createMeasurementHandler);
+router.get('/shopping-list', requireAuth, getShoppingListHandler);
+router.post('/shopping-list', requireAuth, createShoppingItemHandler);
+router.get('/analytics', requireAuth, getAnalyticsHandler);
+export default router;

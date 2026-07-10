@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>PLIST_VERSION</key>
+  <string>1</string>
+  <key>BUNDLE_ID</key>
+  <string>com.fitnessbattle.app</string>
+  <key>PROJECT_ID</key>
+  <string>fitnessbattle</string>
+  <key>STORAGE_BUCKET</key>
+  <string>fitnessbattle.appspot.com</string>
+  <key>API_KEY</key>
+  <string>PLACEHOLDER_IOS_API_KEY</string>
+  <key>GCM_SENDER_ID</key>
+  <string>000000000000</string>
+  <key>GOOGLE_APP_ID</key>
+  <string>1:000000000000:ios:0000000000000000000000</string>
+  <key>FIREBASE_AUTH_WEB_API_KEY</key>
+  <string>PLACEHOLDER_WEB_API_KEY</string>
+</dict>
+</plist>

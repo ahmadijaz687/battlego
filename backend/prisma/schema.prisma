@@ -1,0 +1,2200 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// AUTHENTICATION & USERS
+// ============================================
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique @db.VarChar(255)
+  password      String    @db.VarChar(255)
+  emailVerified Boolean   @default(false)
+  name          String    @db.VarChar(255)
+  avatar        String?   @db.VarChar(500)
+  role          String    @default("user") @db.VarChar(50)
+  streak        Int       @default(0)
+  longestStreak Int       @default(0)
+  points        Int       @default(0)
+  timezone      String?   @db.VarChar(64)
+  healthProviders Json?   @default("[]")
+  createdAt     DateTime  @default(now()) @db.DateTime(6)
+  updatedAt     DateTime  @updatedAt @db.DateTime(6)
+
+  // Relations
+  refreshTokens RefreshToken[]
+  workouts       Workout[]
+  meals          Meal[]
+  waterLogs      WaterLog[]
+  weightLogs     WeightLog[]
+  bodyMeasurements BodyMeasurement[]
+  shoppingListItems ShoppingListItem[]
+  posts          Post[]
+  stories        Story[]
+  friends        Friend[]
+  friendRequestsSent   FriendRequest[] @relation("FriendRequestSender")
+  friendRequestsReceived FriendRequest[] @relation("FriendRequestReceiver")
+  messages       Message[]
+  conversations  ConversationMember[]
+  communities    CommunityMember[]
+  notifications  Notification[]
+  aiConversations AIConversation[]
+  userProfile    UserProfile?
+  userAchievements UserAchievement[]
+  userLevel      UserLevel?
+  battlePasses   BattlePass[]
+  challengeParticipants ChallengeParticipant[]
+  habits         Habit[]
+  sleepLogs      SleepLog[]
+  hrvLogs        HRVLog[]
+  moodLogs       MoodLog[]
+  wearableData   WearableData[]
+  comments       Comment[]
+  postLikes      PostLike[]
+  recoveryScores     RecoveryScore[]
+  coachProfile       CoachProfile?
+  clientOf           Client[]                 @relation("ClientCoach")
+  programs           Program[]
+  goals              Goal[]
+  items              UserItem[]
+  subscriptions      Subscription[]
+  battlesAsCreator  Battle[]                 @relation("BattleCreator")
+  battlesAsOpponent Battle[]                 @relation("BattleOpponent")
+  battlesAsWinner   Battle[]                 @relation("BattleWinner")
+  reportsMade        Report[]                 @relation("ReportReporter")
+  reportsReceived    Report[]                 @relation("ReportReported")
+  analyticsEvents    AnalyticsEvent[]
+  devices            UserDevice[]
+  syncRecords        SyncRecord[]
+  settings           UserSettings?
+  calendarEvents     CalendarEvent[]
+  recoverySessions   RecoverySession[]
+  passwordResetTokens PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  pushTokens         PushToken[]
+  userBadges         UserBadge[]
+  healthData         HealthData[]
+
+  @@index([email])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique @db.VarChar(500)
+  familyId  String   @db.VarChar(36)
+  revoked   Boolean  @default(false)
+  expiresAt DateTime @db.DateTime(6)
+  createdAt DateTime @default(now()) @db.DateTime(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([familyId])
+  @@map("refresh_tokens")
+}
+
+// ============================================
+// WORKOUTS
+// ============================================
+
+model Workout {
+  id          String    @id @default(uuid())
+  userId      String
+  name        String    @db.VarChar(255)
+  type        WorkoutType
+  difficulty  Difficulty
+  duration    Int
+  startedAt   DateTime? @db.DateTime(6)
+  completedAt DateTime? @db.DateTime(6)
+  createdAt   DateTime  @default(now()) @db.DateTime(6)
+
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sections WorkoutSection[]
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("workouts")
+}
+
+model WorkoutSection {
+  id         String   @id @default(uuid())
+  workoutId  String
+  type       SectionType
+  name       String   @db.VarChar(255)
+  order      Int      @default(0)
+
+  workout Workout     @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  exercises WorkoutExercise[]
+
+  @@index([workoutId])
+  @@map("workout_sections")
+}
+
+model WorkoutExercise {
+  id          String   @id @default(uuid())
+  sectionId   String
+  exerciseId  String   @db.VarChar(255)
+  name        String   @db.VarChar(255)
+  order       Int      @default(0)
+
+  section WorkoutSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  sets    WorkoutSet[]
+
+  @@index([sectionId])
+  @@map("workout_exercises")
+}
+
+model WorkoutSet {
+  id            String   @id @default(uuid())
+  exerciseId    String
+  setNumber     Int
+  reps          Int?
+  weight        Float?
+  duration      Int?
+  distance      Float?
+  tempo         String?  @db.VarChar(50)
+  rpe           Int?
+  restAfter     Int?
+  notes         String?  @db.Text
+  completed     Boolean  @default(false)
+  isPR          Boolean  @default(false)
+  completedAt   DateTime? @db.DateTime(6)
+
+  exercise WorkoutExercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@index([exerciseId])
+  @@map("workout_sets")
+}
+
+model WorkoutTemplate {
+  id          String   @id @default(uuid())
+  name        String   @unique @db.VarChar(255)
+  description String?  @db.Text
+  difficulty  Difficulty
+  duration    Int
+  exercises   Json
+  createdAt   DateTime @default(now()) @db.DateTime(6)
+
+  @@index([name])
+  @@map("workout_templates")
+}
+
+model PersonalRecord {
+  id           String    @id @default(uuid())
+  userId       String
+  exerciseId   String    @db.VarChar(255)
+  exerciseName String    @db.VarChar(255)
+  recordType   RecordType  @default(MAX_WEIGHT)
+  value        Float
+  unit         String    @db.VarChar(50)
+  date         DateTime  @default(now()) @db.DateTime(6)
+
+  @@unique([userId, exerciseId, recordType])
+  @@index([userId])
+  @@map("personal_records")
+}
+
+// ============================================
+// NUTRITION
+// ============================================
+
+model Food {
+  id          String   @id @default(uuid())
+  name        String   @unique @db.VarChar(255)
+  brand       String?  @db.VarChar(255)
+  calories    Int
+  protein     Float
+  carbs       Float
+  fat         Float
+  fiber       Float?
+  sugar       Float?
+  servingSize String   @db.VarChar(100)
+  category    String?  @db.VarChar(100)
+  tags        Json     @default("[]")
+  barcode     String?  @unique @db.VarChar(255)
+  per100g     Json?
+  createdAt   DateTime @default(now()) @db.DateTime(6)
+
+  mealFoods MealFood[]
+
+  @@index([name])
+  @@index([category])
+  @@map("foods")
+}
+
+model Meal {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String   @db.VarChar(255)
+  type      MealType  @default(BREAKFAST)
+  date      DateTime  @default(now())
+  time      String?   @db.VarChar(8)
+  createdAt DateTime @default(now()) @db.DateTime(6)
+
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  foods  MealFood[]
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([type])
+  @@index([date])
+  @@map("meals")
+}
+
+model MealFood {
+  id        String   @id @default(uuid())
+  mealId    String
+  foodId    String
+  quantity  Float
+  userId    String?  @db.VarChar(255)
+  updatedAt DateTime @updatedAt @db.DateTime(6)
+
+  meal   Meal @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  food   Food  @relation(fields: [foodId], references: [id], onDelete: Cascade)
+
+  @@unique([mealId, foodId])
+  @@index([userId])
+  @@map("meal_foods")
+}
+
+model Recipe {
+  id            String   @id @default(uuid())
+  name          String   @unique @db.VarChar(255)
+  description   String   @db.Text
+  mealType      String   @db.VarChar(50)
+  difficulty    String   @default("beginner") @db.VarChar(20)
+  prepTime      Int
+  cookTime      Int?
+  servings      Int
+  calories      Int
+  protein       Float
+  carbs         Float
+  fat           Float
+  fiber         Float?
+  ingredients   Json     @default("[]")
+  steps         Json     @default("[]")
+  tags          Json     @default("[]")
+  imageUrl      String?  @db.Text
+  createdAt     DateTime @default(now()) @db.DateTime(6)
+  updatedAt     DateTime @updatedAt @db.DateTime(6)
+
+  @@index([mealType])
+  @@index([name])
+  @@map("recipes")
+}
+
+model WaterLog {
+  id        String   @id @default(uuid())
+  userId    String
+  amount    Int
+  date      DateTime @default(now()) @db.DateTime(6)
+  updatedAt DateTime @updatedAt @db.DateTime(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("water_logs")
+}
+
+model WeightLog {
+  id        String   @id @default(uuid())
+  userId    String
+  date      String   @db.VarChar(50)
+  weight    Float
+  unit      WeightUnit
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("weight_logs")
+}
+
+model BodyMeasurement {
+  id        String   @id @default(uuid())
+  userId    String
+  date      String   @db.VarChar(50)
+  chest     Float?
+  waist      Float?
+  hips       Float?
+  shoulders  Float?
+  arms       Float?
+  forearms   Float?
+  thighs     Float?
+  calves     Float?
+  neck       Float?
+  bodyFat    Float?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("body_measurements")
+}
+
+model ShoppingListItem {
+  id             String   @id @default(uuid())
+  userId         String
+  shoppingListId String?
+  name           String   @db.VarChar(255)
+  quantity       Float
+  unit           String   @db.VarChar(50)
+  category       String   @db.VarChar(100)
+  completed      Boolean  @default(false)
+  createdAt      DateTime @default(now()) @db.DateTime(6)
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shoppingList ShoppingList? @relation(fields: [shoppingListId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([shoppingListId])
+  @@map("shopping_list_items")
+}
+
+// ============================================
+// SOCIAL
+// ============================================
+
+model Post {
+  id        String   @id @default(uuid())
+  userId    String
+  userName  String   @db.VarChar(255)
+  userAvatar String? @db.VarChar(500)
+  content   String   @db.Text
+  images    Json?    // Array of image URLs
+  workoutId String?
+  mealId    String?
+  likes     Int      @default(0)
+  comments  Int      @default(0)
+  shares    Int      @default(0)
+  saves     Int      @default(0)
+  type      PostType
+  createdAt DateTime @default(now()) @db.DateTime(6)
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postComments Comment[] @relation("PostComments")
+  postLikes    PostLike[] @relation("PostLikes")
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("posts")
+}
+
+model Story {
+  id        String   @id @default(uuid())
+  userId    String
+  userName  String   @db.VarChar(255)
+  image     String?  @db.VarChar(500)
+  videoUrl  String?  @db.VarChar(500)
+  viewed    Boolean  @default(false)
+  duration  Int
+  expiresAt DateTime @db.DateTime(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("stories")
+}
+
+model Friend {
+  id        String   @id @default(uuid())
+  userId    String
+  friendId  String
+  name      String   @db.VarChar(255)
+  username  String   @unique @db.VarChar(255)
+  avatar    String?  @db.VarChar(500)
+  status    FriendStatus
+  lastSeen  DateTime? @db.DateTime(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+  @@index([userId])
+  @@map("friends")
+}
+
+model FriendRequest {
+  id           String   @id @default(uuid())
+  userId       String
+  fromUserId   String
+  fromUserName String   @db.VarChar(255)
+  fromUserAvatar String? @db.VarChar(500)
+  status       FriendRequestStatus
+  createdAt    DateTime @default(now()) @db.DateTime(6)
+
+  sender   User @relation("FriendRequestSender", fields: [userId], references: [id], onDelete: Cascade)
+  receiver User @relation("FriendRequestReceiver", fields: [fromUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, fromUserId])
+  @@index([userId, status])
+  @@map("friend_requests")
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String
+  senderId       String
+  senderName     String   @db.VarChar(255)
+  content        String   @db.Text
+  mediaUrl       String?  @db.VarChar(500)
+  sentAt         DateTime @default(now()) @db.DateTime(6)
+  readAt         DateTime? @db.DateTime(6)
+  deliveredAt    DateTime? @db.DateTime(6)
+  type           MessageType
+
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, sentAt])
+  @@map("messages")
+}
+
+model Conversation {
+  id              String   @id @default(uuid())
+  participantIds  Json     // Array of user IDs
+  participantNames Json    // Array of user names
+  lastMessage     String?  @db.Text
+  lastMessageAt   DateTime? @db.DateTime(6)
+  unreadCount     Int      @default(0)
+  createdAt       DateTime @default(now()) @db.DateTime(6)
+
+  members  ConversationMember[]
+  messages Message[]
+
+  @@index([lastMessageAt])
+  @@map("conversations")
+}
+
+model ConversationMember {
+  id             String   @id @default(uuid())
+  conversationId String
+  userId         String
+  userName       String   @db.VarChar(255)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@map("conversation_members")
+}
+
+model Community {
+  id          String   @id @default(uuid())
+  name        String   @unique @db.VarChar(255)
+  description String   @db.Text
+  avatar      String?  @db.VarChar(500)
+  memberCount Int      @default(0)
+  isPrivate   Boolean  @default(false)
+  createdAt   DateTime @default(now()) @db.DateTime(6)
+
+  members CommunityMember[]
+
+  @@index([name])
+  @@map("communities")
+}
+
+model CommunityMember {
+  id         String   @id @default(uuid())
+  communityId String
+  userId     String
+  userName   String   @db.VarChar(255)
+  joinedAt   DateTime @default(now()) @db.DateTime(6)
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([communityId, userId])
+  @@map("community_members")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String   @db.VarChar(255)
+  content   String   @db.Text
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.DateTime(6)
+  relatedId String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ============================================
+// AI
+// ============================================
+
+model AIConversation {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String   @db.VarChar(255)
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.DateTime(6)
+  updatedAt DateTime @updatedAt @db.DateTime(6)
+
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages AIMessage[]
+
+  @@index([userId])
+  @@index([updatedAt])
+  @@map("ai_conversations")
+}
+
+model AIMessage {
+  id             String   @id @default(uuid())
+  conversationId String
+  role           MessageRole
+  content        String   @db.Text
+  thinking       Boolean  @default(false)
+  timestamp      DateTime @default(now()) @db.DateTime(6)
+
+  conversation AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, timestamp])
+  @@map("ai_messages")
+}
+
+// ============================================
+// KNOWLEDGE BASE
+// ============================================
+
+model KnowledgeArticle {
+  id              String   @id @default(uuid())
+  title           String   @db.VarChar(500)
+  category        String   @db.VarChar(100)
+  summary         String   @db.Text
+  content         String   @db.Text
+  tags            Json     @default("[]")
+  difficulty      String   @default("beginner") @db.VarChar(20)
+  evidenceLevel   String?  @db.VarChar(50)
+  relatedTopics   Json     @default("[]")
+  references      Json     @default("[]")
+  createdAt       DateTime @default(now()) @db.DateTime(6)
+  updatedAt       DateTime @updatedAt @db.DateTime(6)
+
+  @@index([category])
+  @@index([title])
+  @@map("knowledge_articles")
+}
+
+// ============================================
+// EXERCISES
+// ============================================
+
+model Exercise {
+  id              String   @id @default(uuid())
+  name            String   @unique @db.VarChar(200)
+  primaryMuscle   String   @db.VarChar(100)
+  secondaryMuscles Json     @default("[]")
+  equipment       Json     @default("[]")
+  difficulty      String   @default("beginner") @db.VarChar(50)
+  category        String?  @db.VarChar(100)
+  tags            Json     @default("[]")
+  instructions    String?  @db.Text
+  imageUrl        String?  @db.Text
+  videoUrl        String?  @db.Text
+  met             Float?   @db.Double
+  isBodyweight    Boolean  @default(false)
+  caloriesPerMin  Float?   @db.Double
+  demoMedia       Json?    @default("[]")
+  createdAt       DateTime @default(now()) @db.DateTime(6)
+  updatedAt       DateTime @updatedAt @db.DateTime(6)
+
+  programExercises ProgramExercise[]
+
+  @@index([primaryMuscle])
+  @@index([difficulty])
+  @@index([category])
+  @@index([isBodyweight])
+  @@map("exercises")
+}
+
+// ============================================
+// BATTLES
+// ============================================
+
+model Battle {
+  id            String       @id @default(uuid())
+  creatorId     String
+  opponentId    String?
+  type          String       @db.VarChar(100)
+  battleTypeId  String?
+  battleType    BattleType?  @relation(fields: [battleTypeId], references: [id], onDelete: SetNull)
+  mode          BattleMode?
+  metric        String?
+  target        Float?
+  inviteCode    String?      @unique @db.VarChar(50)
+  status        BattleStatus
+  creatorScore  Float?
+  opponentScore Float?
+  startTime     DateTime?    @db.DateTime(6)
+  endTime       DateTime?    @db.DateTime(6)
+  winnerId      String?
+  createdAt     DateTime     @default(now()) @db.DateTime(6)
+  updatedAt     DateTime     @updatedAt @db.DateTime(6)
+
+  creator  User  @relation("BattleCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  opponent User? @relation("BattleOpponent", fields: [opponentId], references: [id], onDelete: SetNull)
+  winner   User? @relation("BattleWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+
+  @@index([creatorId])
+  @@index([opponentId])
+  @@index([winnerId])
+  @@index([status])
+  @@index([inviteCode])
+  @@index([createdAt])
+  @@map("battles")
+}
+
+// ============================================
+// USER PROFILE
+// ============================================
+
+model UserProfile {
+  id            String    @id @default(uuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio           String?   @db.Text
+  dateOfBirth   DateTime? @db.DateTime(6)
+  height        Float?
+  heightUnit    String    @default("cm") @db.VarChar(10)
+  goal          String?   @db.VarChar(255)
+  experience    String    @default("beginner") @db.VarChar(50)
+  fitnessLevel  String    @default("beginner") @db.VarChar(50)
+  activityLevel String    @default("sedentary") @db.VarChar(50)
+  equipment     Json      @default("[]")
+  injuries      Json      @default("[]")
+  preferences   Json      @default("{}")
+  onboardingComplete Boolean @default(false)
+  createdAt     DateTime  @default(now()) @db.DateTime(6)
+  updatedAt     DateTime  @updatedAt @db.DateTime(6)
+
+  @@index([userId])
+  @@map("user_profiles")
+}
+
+// ============================================
+// ACHIEVEMENTS & GAMIFICATION
+// ============================================
+
+model Achievement {
+  id          String   @id @default(uuid())
+  name        String   @unique @db.VarChar(255)
+  description String   @db.Text
+  icon        String   @db.VarChar(500)
+  category    String   @db.VarChar(100)
+  xpReward    Int      @default(0)
+  criteria    Json     @default("{}")
+  createdAt   DateTime @default(now()) @db.DateTime(6)
+
+  userAchievements UserAchievement[]
+
+  @@index([category])
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String   @id @default(uuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now()) @db.DateTime(6)
+
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@map("user_achievements")
+}
+
+model UserLevel {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level     Int      @default(1)
+  xp        Int      @default(0)
+  totalXp   Int      @default(0)
+  updatedAt DateTime @updatedAt @db.DateTime(6)
+
+  @@index([userId])
+  @@map("user_levels")
+}
+
+// ============================================
+// BATTLE PASS & SEASONS
+// ============================================
+
+model Season {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  startDate   DateTime @db.DateTime(6)
+  endDate     DateTime @db.DateTime(6)
+  active      Boolean  @default(false)
+  createdAt   DateTime @default(now()) @db.DateTime(6)
+
+  battlePasses BattlePass[]
+
+  @@index([active])
+  @@map("seasons")
+}
+
+model BattlePass {
+  id        String   @id @default(uuid())
+  userId    String
+  seasonId  String
+  tier      Int      @default(1)
+  xp        Int      @default(0)
+  premium   Boolean  @default(false)
+  claimed   Json     @default("[]")
+  createdAt DateTime @default(now()) @db.DateTime(6)
+  updatedAt DateTime @updatedAt @db.DateTime(6)
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  season Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, seasonId])
+  @@index([userId])
+  @@index([seasonId])
+  @@map("battle_passes")
+}
+
+// ============================================
+// HABIT TRACKING
+// ============================================
+
+model Habit {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  category    String   @db.VarChar(100)
+  frequency   String   @default("daily") @db.VarChar(50)
+  target      Int      @default(1)
+  unit        String?  @db.VarChar(50)
+  streak      Int      @default(0)
+  longestStreak Int    @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @db.DateTime(6)
+  updatedAt   DateTime @updatedAt @db.DateTime(6)
+
+  logs HabitLog[]
+
+  @@index([userId, active])
+  @@map("habits")
+}
+
+model HabitLog {
+  id        String   @id @default(uuid())
+  habitId   String
+  date      DateTime @db.DateTime(6)
+  value     Float    @default(1)
+  note      String?  @db.Text
+  createdAt DateTime @default(now()) @db.DateTime(6)
+
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, date])
+  @@index([habitId])
+  @@map("habit_logs")
+}
+
+// ============================================
+// HEALTH METRICS
+// ============================================
+
+model SleepLog {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date       DateTime @db.DateTime(6)
+  duration   Int
+  quality    Int?
+  deepSleep  Int?
+  remSleep   Int?
+  lightSleep Int?
+  awakeTime  Int?
+  source     String?  @db.VarChar(100)
+  createdAt  DateTime @default(now()) @db.DateTime(6)
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@map("sleep_logs")
+}
+
+model HRVLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @db.DateTime(6)
+  hrv       Float
+  rmssd     Float?
+  sdnn      Float?
+  source    String?  @db.VarChar(100)
+  createdAt DateTime @default(now()) @db.DateTime(6)
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@map("hrv_logs")
+}
+
+model MoodLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @db.DateTime(6)
+  mood      Int
+  energy    Int?
+  stress    Int?
+  note      String?  @db.Text
+  createdAt DateTime @default(now()) @db.DateTime(6)
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@map("mood_logs")
+}
+
+// ============================================
+// COMMENTS & LIKES
+// ============================================
+
+model Comment {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation("PostComments", fields: [postId], references: [id], onDelete: Cascade)
+  userName  String   @db.VarChar(255)
+  userAvatar String? @db.VarChar(500)
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @db.DateTime(6)
+
+  @@index([postId])
+  @@index([userId])
+  @@map("comments")
+}
+
+model PostLike {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation("PostLikes", fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @db.DateTime(6)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@map("post_likes")
+}
+
+// ============================================
+// WEARABLE DATA
+// ============================================
+
+model WearableData {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source    String   @db.VarChar(100)
+  type      String   @db.VarChar(100)
+  data      Json
+  syncedAt  DateTime @default(now()) @db.DateTime(6)
+  createdAt DateTime @default(now()) @db.DateTime(6)
+
+  @@index([userId, source])
+  @@index([userId, type])
+  @@map("wearable_data")
+}
+
+// ============================================
+// CHALLENGES
+// ============================================
+
+model Challenge {
+  id           String   @id @default(uuid())
+  name         String   @db.VarChar(255)
+  description  String   @db.Text
+  type         String   @db.VarChar(100)
+  goal         Json
+  reward       Json     @default("{}")
+  startDate    DateTime @db.DateTime(6)
+  endDate      DateTime @db.DateTime(6)
+  participantCount Int   @default(0)
+  createdBy    String?
+  createdAt    DateTime @default(now()) @db.DateTime(6)
+
+  participants ChallengeParticipant[]
+
+  @@index([type])
+  @@index([startDate, endDate])
+  @@map("challenges")
+}
+
+model ChallengeParticipant {
+  id          String   @id @default(uuid())
+  challengeId String
+  userId      String
+  progress    Float    @default(0)
+  completed   Boolean  @default(false)
+  joinedAt    DateTime @default(now()) @db.DateTime(6)
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, userId])
+  @@index([challengeId])
+  @@map("challenge_participants")
+}
+
+// ============================================
+// RECOVERY & READINESS
+// ============================================
+
+model RecoveryScore {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        DateTime @db.DateTime(6)
+  readiness   Int
+  fatigue     Int
+  recovery    Int
+  sleepScore  Int?
+  hrvScore    Int?
+  moodScore   Int?
+  overall     Int
+  factors     Json     @default("{}")
+  createdAt   DateTime @default(now()) @db.DateTime(6)
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@map("recovery_scores")
+}
+
+// ============================================
+// USER SETTINGS (extended)
+// ============================================
+
+model SyncRecord {
+  id             String   @id @default(uuid())
+  userId         String
+  entityId       String
+  domain         String   @db.VarChar(50)
+  action         String   @db.VarChar(20)
+  data           Json     @default("{}")
+  clientTimestamp String  @db.VarChar(100)
+  serverTimestamp DateTime @default(now()) @db.DateTime(6)
+  version        Int      @default(1)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, serverTimestamp])
+  @@index([entityId])
+  @@index([domain])
+  @@map("sync_records")
+}
+
+model UserSettings {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme     String   @default("dark") @db.VarChar(50)
+  units     String   @default("imperial") @db.VarChar(20)
+  notifications Json  @default("{}")
+  createdAt DateTime @default(now()) @db.DateTime(6)
+  updatedAt DateTime @updatedAt @db.DateTime(6)
+
+  @@index([userId])
+  @@map("user_settings")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum BattleStatus {
+  pending
+  active
+  completed
+  cancelled
+}
+
+enum WorkoutType {
+  strength
+  cardio
+  hybrid
+}
+
+enum Difficulty {
+  beginner
+  intermediate
+  advanced
+}
+
+enum SectionType {
+  warmup
+  main
+  cooldown
+}
+
+enum WeightUnit {
+  lbs
+  kg
+}
+
+enum PostType {
+  workout
+  nutrition
+  transformation
+  achievement
+  battle
+  general
+}
+
+enum FriendStatus {
+  online
+  offline
+  busy
+}
+
+enum FriendRequestStatus {
+  pending
+  accepted
+  declined
+}
+
+enum MessageType {
+  text
+  image
+  voice
+}
+
+enum NotificationType {
+  like
+  comment
+  friend_request
+  battle_invite
+  community
+  story_reaction
+  message
+}
+
+enum MessageRole {
+  user
+  assistant
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  ABANDONED
+}
+
+enum GoalType {
+  WORKOUT
+  NUTRITION
+  HEALTH
+  SOCIAL
+  BODY_COMPOSITION
+}
+
+enum MarketplaceItemType {
+  AVATAR
+  BADGE
+  THEME
+  BOOST
+  POWER_UP
+}
+
+enum ItemRarity {
+  COMMON
+  RARE
+  EPIC
+  LEGENDARY
+}
+
+enum SubscriptionPlan {
+  FREE
+  PREMIUM
+  PRO
+  ELITE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  EXPIRED
+  PAST_DUE
+}
+
+enum BattleTypeEnum {
+  ONE_VS_ONE
+  TEAM
+  GLOBAL
+}
+
+enum BattleMode {
+  REPS
+  CALORIES
+  DURATION
+  DISTANCE
+  WORKOUTS
+}
+
+enum RecordType {
+  MAX_WEIGHT
+  MAX_REPS
+  BEST_TIME
+  LONGEST_DISTANCE
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+}
+
+enum HealthSource {
+  APPLE
+  GOOGLE
+}
+
+enum OfflineOp {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
+}
+
+enum EventType {
+  WORKOUT
+  MEAL
+  HABIT
+  GOAL
+  REMINDER
+  CUSTOM
+}
+
+enum RecoveryType {
+  ACTIVE
+  PASSIVE
+  STRETCHING
+  MOBILITY
+  SAUNA
+  ICE_BATH
+}
+
+enum ClientStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+// ============================================
+// COACHING
+// ============================================
+
+model CoachProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  bio             String?  @db.Text
+  specialties     Json      @default("[]")
+  certifications  Json      @default("[]")
+  rating          Float    @default(0)
+  sessionCount    Int      @default(0)
+  isVerified      Boolean  @default(false)
+  createdAt       DateTime @default(now()) @db.DateTime(6)
+  updatedAt       DateTime @updatedAt @db.DateTime(6)
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clients Client[] @relation("CoachClients")
+
+  @@index([userId])
+  @@map("coach_profiles")
+}
+
+model Client {
+  id        String       @id @default(uuid())
+  coachId   String
+  clientId  String
+  startDate DateTime     @default(now()) @db.DateTime(6)
+  status    ClientStatus @default(ACTIVE)
+  createdAt DateTime     @default(now()) @db.DateTime(6)
+
+  coach  CoachProfile @relation("CoachClients", fields: [coachId], references: [id], onDelete: Cascade)
+  client User         @relation("ClientCoach", fields: [clientId], references: [id], onDelete: Cascade)
+  plans  ClientPlan[]
+
+  @@unique([coachId, clientId])
+  @@index([coachId])
+  @@index([clientId])
+  @@map("clients")
+}
+
+model ClientPlan {
+  id          String   @id @default(uuid())
+  clientId    String
+  type        String   @db.VarChar(50)
+  title       String   @db.VarChar(255)
+  description String?  @db.Text
+  startDate   DateTime @db.DateTime(6)
+  endDate     DateTime? @db.DateTime(6)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now()) @db.DateTime(6)
+  updatedAt   DateTime @updatedAt @db.DateTime(6)
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@map("client_plans")
+}
+
+// ============================================
+// PROGRAMS
+// ============================================
+
+model Program {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  difficulty  String   @db.VarChar(50)
+  duration    Int
+  isPublic    Boolean  @default(false)
+  authorId    String
+  createdAt   DateTime @default(now()) @db.DateTime(6)
+  updatedAt   DateTime @updatedAt @db.DateTime(6)
+
+  author User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  days   ProgramDay[]
+
+  @@index([authorId])
+  @@index([isPublic])
+  @@map("programs")
+}
+
+model ProgramDay {
+  id        String   @id @default(uuid())
+  programId String
+  dayNumber Int
+  name      String?  @db.VarChar(255)
+  notes     String?  @db.Text
+
+  program   Program           @relation(fields: [programId], references: [id], onDelete: Cascade)
+  exercises ProgramExercise[]
+
+  @@unique([programId, dayNumber])
+  @@index([programId])
+  @@map("program_days")
+}
+
+model ProgramExercise {
+  id           String   @id @default(uuid())
+  programDayId String
+  exerciseId   String
+  sets         Int
+  reps         String   @db.VarChar(50)
+  rest         Int
+  order        Int
+  notes        String?  @db.Text
+
+  programDay ProgramDay @relation(fields: [programDayId], references: [id], onDelete: Cascade)
+  exercise   Exercise   @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@index([programDayId])
+  @@index([exerciseId])
+  @@map("program_exercises")
+}
+
+// ============================================
+// GOALS
+// ============================================
+
+model Goal {
+  id           String     @id @default(uuid())
+  userId       String
+  title        String     @db.VarChar(255)
+  description  String?    @db.Text
+  type         GoalType
+  targetValue  Float?
+  currentValue Float?
+  unit         String?    @db.VarChar(50)
+  startDate    DateTime   @db.DateTime(6)
+  targetDate   DateTime   @db.DateTime(6)
+  status       GoalStatus @default(ACTIVE)
+  category     String?    @db.VarChar(100)
+  createdAt    DateTime   @default(now()) @db.DateTime(6)
+  updatedAt    DateTime   @updatedAt @db.DateTime(6)
+
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  progress GoalProgress[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+  @@map("goals")
+}
+
+model GoalProgress {
+  id        String   @id @default(uuid())
+  goalId    String
+  value     Float
+  date      DateTime @default(now()) @db.DateTime(6)
+  note      String?  @db.Text
+  createdAt DateTime @default(now()) @db.DateTime(6)
+
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId])
+  @@map("goal_progress")
+}
+
+// ============================================
+// MARKETPLACE
+// ============================================
+
+model MarketplaceItem {
+  id          String              @id @default(uuid())
+  name        String              @db.VarChar(255)
+  description String?             @db.Text
+  price       Int
+  type        MarketplaceItemType
+  rarity      ItemRarity
+  imageUrl    String?             @db.VarChar(500)
+  isLimited   Boolean             @default(false)
+  createdAt   DateTime            @default(now()) @db.DateTime(6)
+
+  userItems UserItem[]
+
+  @@index([type])
+  @@index([rarity])
+  @@map("marketplace_items")
+}
+
+model UserItem {
+  id           String   @id @default(uuid())
+  userId       String
+  itemId       String
+  purchasedAt  DateTime @default(now()) @db.DateTime(6)
+  isEquipped   Boolean  @default(false)
+  quantity     Int      @default(1)
+
+  user User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item MarketplaceItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+  @@index([userId])
+  @@map("user_items")
+}
+
+// ============================================
+// SUBSCRIPTIONS
+// ============================================
+
+model Subscription {
+  id                  String             @id @default(uuid())
+  userId              String
+  plan                SubscriptionPlan
+  startDate           DateTime           @db.DateTime(6)
+  endDate             DateTime?          @db.DateTime(6)
+  autoRenew           Boolean            @default(true)
+  stripeSubscriptionId String?           @db.VarChar(255)
+  status              SubscriptionStatus @default(ACTIVE)
+  createdAt           DateTime           @default(now()) @db.DateTime(6)
+  updatedAt           DateTime           @updatedAt @db.DateTime(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+// ============================================
+// REPORTS
+// ============================================
+
+model Report {
+  id             String       @id @default(uuid())
+  reporterId     String
+  reportedUserId String?
+  postId         String?
+  reason         String       @db.Text
+  description    String?      @db.Text
+  status         ReportStatus @default(PENDING)
+  createdAt      DateTime     @default(now()) @db.DateTime(6)
+  resolvedAt     DateTime?    @db.DateTime(6)
+
+  reporter     User  @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser User? @relation("ReportReported", fields: [reportedUserId], references: [id], onDelete: SetNull)
+
+  @@index([reporterId])
+  @@index([reportedUserId])
+  @@index([status])
+  @@map("reports")
+}
+
+// ============================================
+// ANALYTICS
+// ============================================
+
+model AnalyticsEvent {
+  id         String   @id @default(uuid())
+  userId     String
+  event      String   @db.VarChar(255)
+  properties Json     @default("{}")
+  sessionId  String?  @db.VarChar(255)
+  timestamp  DateTime @default(now()) @db.DateTime(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, timestamp])
+  @@index([event])
+  @@index([sessionId])
+  @@map("analytics_events")
+}
+
+// ============================================
+// USER DEVICES
+// ============================================
+
+model UserDevice {
+  id          String   @id @default(uuid())
+  userId      String
+  platform    String   @db.VarChar(100)
+  deviceToken String   @db.VarChar(500)
+  isActive    Boolean  @default(true)
+  lastUsed    DateTime @default(now()) @db.DateTime(6)
+  createdAt   DateTime @default(now()) @db.DateTime(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([deviceToken])
+  @@map("user_devices")
+}
+
+// ============================================
+// CALENDAR
+// ============================================
+
+model CalendarEvent {
+  id          String    @id @default(uuid())
+  userId      String
+  title       String    @db.VarChar(255)
+  description String?   @db.Text
+  eventType   EventType
+  startTime   DateTime  @db.DateTime(6)
+  endTime     DateTime? @db.DateTime(6)
+  allDay      Boolean   @default(false)
+  color       String?   @db.VarChar(50)
+  metadata    Json?     @default("{}")
+  createdAt   DateTime  @default(now()) @db.DateTime(6)
+  updatedAt   DateTime  @updatedAt @db.DateTime(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startTime])
+  @@index([eventType])
+  @@map("calendar_events")
+}
+
+// ============================================
+// RECOVERY
+// ============================================
+
+model RecoverySession {
+  id                String       @id @default(uuid())
+  userId            String
+  date              DateTime     @db.DateTime(6)
+  type              RecoveryType
+  duration          Int
+  notes             String?      @db.Text
+  perceivedRecovery Int?
+  createdAt         DateTime     @default(now()) @db.DateTime(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("recovery_sessions")
+}
+
+// ============================================
+// MISSING COLLECTIONS FROM SPEC - Exercise
+// ============================================
+
+model ExerciseCategory {
+  id          String   @id @default(uuid())
+  name        String   @unique @db.VarChar(255)
+  slug        String   @unique @db.VarChar(255)
+  description String?  @db.Text
+  icon        String?  @db.VarChar(500)
+  image       String?  @db.VarChar(500)
+  color       String?  @db.VarChar(50)
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now()) @db.DateTime(6)
+  updatedAt   DateTime @updatedAt @db.DateTime(6)
+
+  @@index([slug])
+  @@index([isActive])
+  @@map("exercise_categories")
+}
+
+model Equipment {
+  id          String   @id @default(uuid())
+  name        String   @unique @db.VarChar(255)
+  category    String?  @db.VarChar(100)
+  icon        String?  @db.VarChar(500)
+  image       String?  @db.VarChar(500)
+  description String?  @db.Text
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now()) @db.DateTime(6)
+  updatedAt   DateTime @updatedAt @db.DateTime(6)
+
+  @@index([category])
+  @@map("equipment")
+}
+
+model MuscleGroup {
+  id          String   @id @default(uuid())
+  name        String   @unique @db.VarChar(255)
+  bodyRegion  String   @db.VarChar(100)
+  icon        String?  @db.VarChar(500)
+  image       String?  @db.VarChar(500)
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @db.DateTime(6)
+
+  @@index([bodyRegion])
+  @@map("muscle_groups")
+}
+
+model ExerciseVariation {
+  id            String   @id @default(uuid())
+  exerciseId    String
+  variationName String   @db.VarChar(255)
+  difficulty    String?  @db.VarChar(50)
+  equipment     String?  @db.VarChar(255)
+  description   String?  @db.Text
+  video         String?  @db.VarChar(500)
+  thumbnail     String?  @db.VarChar(500)
+  createdAt     DateTime @default(now()) @db.DateTime(6)
+
+  @@index([exerciseId])
+  @@map("exercise_variations")
+}
+
+// ============================================
+// MISSING COLLECTIONS - Nutrition
+// ============================================
+
+model FoodCategory {
+  id          String   @id @default(uuid())
+  name        String   @unique @db.VarChar(255)
+  slug        String   @unique @db.VarChar(255)
+  icon        String?  @db.VarChar(500)
+  description String?  @db.Text
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now()) @db.DateTime(6)
+  updatedAt   DateTime @updatedAt @db.DateTime(6)
+
+  @@index([slug])
+  @@map("food_categories")
+}
+
+model MealPlan {
+  id                String   @id @default(uuid())
+  title             String   @db.VarChar(255)
+  description       String?  @db.Text
+  goal              String?  @db.VarChar(100)
+  difficulty        String?  @db.VarChar(50)
+  days              Int      @default(7)
+  author            String?  @db.VarChar(255)
+  image             String?  @db.VarChar(500)
+  estimatedCalories Int?
+  estimatedProtein  Float?
+  estimatedCarbs    Float?
+  estimatedFat      Float?
+  createdAt         DateTime @default(now()) @db.DateTime(6)
+  updatedAt         DateTime @updatedAt @db.DateTime(6)
+
+  planDays MealPlanDay[]
+
+  @@index([title])
+  @@map("meal_plans")
+}
+
+model MealPlanDay {
+  id          String   @id @default(uuid())
+  mealPlanId  String
+  day         Int
+  breakfast   Json     @default("[]")
+  lunch       Json     @default("[]")
+  dinner      Json     @default("[]")
+  snacks      Json     @default("[]")
+
+  mealPlan MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+
+  @@unique([mealPlanId, day])
+  @@index([mealPlanId])
+  @@map("meal_plan_days")
+}
+
+// ============================================
+// MISSING COLLECTIONS - Battle
+// ============================================
+
+model BattleCategory {
+  id          String   @id @default(uuid())
+  name        String   @unique @db.VarChar(255)
+  slug        String   @unique @db.VarChar(255)
+  icon        String?  @db.VarChar(500)
+  description String?  @db.Text
+  difficulty  String?  @db.VarChar(50)
+  color       String?  @db.VarChar(50)
+  createdAt   DateTime @default(now()) @db.DateTime(6)
+  updatedAt   DateTime @updatedAt @db.DateTime(6)
+
+  @@index([slug])
+  @@map("battle_categories")
+}
+
+model BattleType {
+  id               String   @id @default(uuid())
+  name             String   @unique @db.VarChar(255)
+  description      String?  @db.Text
+  isRanked         Boolean  @default(false)
+  maxParticipants  Int      @default(2)
+  minParticipants  Int      @default(2)
+  timeLimit        Int?
+  xpMultiplier     Float    @default(1.0)
+  coinMultiplier   Float    @default(1.0)
+  createdAt        DateTime @default(now()) @db.DateTime(6)
+
+  battles Battle[]
+
+  @@index([name])
+  @@map("battle_types")
+}
+
+model BattleParticipant {
+  id            String   @id @default(uuid())
+  battleId      String
+  userId        String
+  joinedAt      DateTime @default(now()) @db.DateTime(6)
+  status        String   @default("pending") @db.VarChar(50)
+  progress      Float    @default(0)
+  score         Float    @default(0)
+  rank          Int?
+  xpEarned      Int      @default(0)
+  coinsEarned   Int      @default(0)
+  completed     Boolean  @default(false)
+  completionTime DateTime?
+
+  @@unique([battleId, userId])
+  @@index([battleId])
+  @@index([userId])
+  @@map("battle_participants")
+}
+
+model BattleInvite {
+  id           String   @id @default(uuid())
+  battleId     String
+  senderId     String
+  receiverId   String
+  status       String   @default("pending") @db.VarChar(50)
+  sentAt       DateTime @default(now()) @db.DateTime(6)
+  acceptedAt   DateTime?
+
+  @@unique([battleId, receiverId])
+  @@index([receiverId])
+  @@index([battleId])
+  @@map("battle_invites")
+}
+
+model BattleResult {
+  id               String   @id @default(uuid())
+  battleId         String   @unique
+  winnerId         String?
+  runnerUpId       String?
+  thirdPlaceId     String?
+  completedAt      DateTime @default(now()) @db.DateTime(6)
+  totalParticipants Int     @default(0)
+  averageScore     Float    @default(0)
+
+  @@index([battleId])
+  @@index([winnerId])
+  @@map("battle_results")
+}
+
+model BattleProgress {
+  id          String   @id @default(uuid())
+  battleId    String
+  userId      String
+  currentValue Float   @default(0)
+  targetValue  Float   @default(0)
+  percentage   Float   @default(0)
+  lastUpdated  DateTime @default(now()) @db.DateTime(6)
+
+  @@unique([battleId, userId])
+  @@index([battleId])
+  @@index([userId])
+  @@map("battle_progress")
+}
+
+model BattleReward {
+  id          String   @id @default(uuid())
+  battleId    String
+  rewardType  String   @db.VarChar(100)
+  rewardName  String   @db.VarChar(255)
+  xp          Int      @default(0)
+  coins       Int      @default(0)
+  badgeId     String?
+  titleId     String?
+  image       String?  @db.VarChar(500)
+
+  @@index([battleId])
+  @@map("battle_rewards")
+}
+
+model BattleComment {
+  id        String   @id @default(uuid())
+  battleId  String
+  userId    String
+  message   String   @db.Text
+  likes     Int      @default(0)
+  createdAt DateTime @default(now()) @db.DateTime(6)
+  updatedAt DateTime @updatedAt @db.DateTime(6)
+
+  @@index([battleId])
+  @@index([userId])
+  @@map("battle_comments")
+}
+
+model BattleReaction {
+  id        String   @id @default(uuid())
+  battleId  String
+  userId    String
+  reaction  String   @db.VarChar(50)
+  createdAt DateTime @default(now()) @db.DateTime(6)
+
+  @@unique([battleId, userId])
+  @@index([battleId])
+  @@index([userId])
+  @@map("battle_reactions")
+}
+
+// ============================================
+// MISSING COLLECTIONS - Leaderboard
+// ============================================
+
+model Leaderboard {
+  id         String   @id @default(uuid())
+  type       String   @db.VarChar(50)
+  period     String?  @db.VarChar(50)
+  seasonId   String?
+  updatedAt  DateTime @updatedAt @db.DateTime(6)
+  createdAt  DateTime @default(now()) @db.DateTime(6)
+
+  entries LeaderboardEntry[]
+
+  @@index([type, period])
+  @@index([seasonId])
+  @@map("leaderboards")
+}
+
+model LeaderboardEntry {
+  id            String   @id @default(uuid())
+  leaderboardId String
+  userId        String
+  rank          Int
+  xp            Int      @default(0)
+  points        Float    @default(0)
+  wins          Int      @default(0)
+  losses        Int      @default(0)
+  streak        Int      @default(0)
+  workouts      Int      @default(0)
+  calories      Float    @default(0)
+  distance      Float    @default(0)
+  updatedAt     DateTime @updatedAt @db.DateTime(6)
+
+  leaderboard Leaderboard @relation(fields: [leaderboardId], references: [id], onDelete: Cascade)
+
+  @@unique([leaderboardId, userId])
+  @@index([leaderboardId, rank])
+  @@index([userId])
+  @@map("leaderboard_entries")
+}
+
+// ============================================
+// MISSING COLLECTIONS - Missions & Challenges
+// ============================================
+
+model DailyMission {
+  id            String   @id @default(uuid())
+  userId        String
+  missionDate   DateTime @db.DateTime(6)
+  missions      Json     @default("[]")
+  completed     Boolean  @default(false)
+  rewardClaimed Boolean  @default(false)
+  createdAt     DateTime @default(now()) @db.DateTime(6)
+
+  @@unique([userId, missionDate])
+  @@index([userId])
+  @@index([missionDate])
+  @@map("daily_missions")
+}
+
+model WeeklyMission {
+  id            String   @id @default(uuid())
+  userId        String
+  week          Int
+  year          Int
+  missions      Json     @default("[]")
+  completed     Boolean  @default(false)
+  rewardClaimed Boolean  @default(false)
+  createdAt     DateTime @default(now()) @db.DateTime(6)
+
+  @@unique([userId, week, year])
+  @@index([userId])
+  @@map("weekly_missions")
+}
+
+model MonthlyMission {
+  id            String   @id @default(uuid())
+  userId        String
+  month         Int
+  year          Int
+  missions      Json     @default("[]")
+  completed     Boolean  @default(false)
+  rewardClaimed Boolean  @default(false)
+  createdAt     DateTime @default(now()) @db.DateTime(6)
+
+  @@unique([userId, month, year])
+  @@index([userId])
+  @@map("monthly_missions")
+}
+
+model Coins {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  balance   Int      @default(0)
+  earned    Int      @default(0)
+  spent     Int      @default(0)
+  updatedAt DateTime @updatedAt @db.DateTime(6)
+  createdAt DateTime @default(now()) @db.DateTime(6)
+
+  @@index([userId])
+  @@map("coins")
+}
+
+model CoinTransaction {
+  id          String   @id @default(uuid())
+  userId      String
+  amount      Int
+  type        String   @db.VarChar(50)
+  description String?  @db.Text
+  referenceId String?
+  createdAt   DateTime @default(now()) @db.DateTime(6)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("coin_transactions")
+}
+
+model Title {
+  id                String   @id @default(uuid())
+  title             String   @unique @db.VarChar(255)
+  description       String?  @db.Text
+  rarity            String   @default("common") @db.VarChar(50)
+  icon              String?  @db.VarChar(500)
+  unlockRequirement Json     @default("{}")
+  createdAt         DateTime @default(now()) @db.DateTime(6)
+
+  @@index([rarity])
+  @@map("titles")
+}
+
+model UnlockedTitle {
+  id         String   @id @default(uuid())
+  userId     String
+  titleId    String
+  unlockedAt DateTime @default(now()) @db.DateTime(6)
+  isEquipped Boolean  @default(false)
+
+  @@unique([userId, titleId])
+  @@index([userId])
+  @@index([titleId])
+  @@map("unlocked_titles")
+}
+
+// ============================================
+// MISSING COLLECTIONS - Social
+// ============================================
+
+model ProgressPhoto {
+  id         String   @id @default(uuid())
+  userId     String
+  image      String   @db.VarChar(500)
+  caption    String?  @db.Text
+  weight     Float?
+  bodyFat    Float?
+  date       DateTime @default(now()) @db.DateTime(6)
+  visibility String   @default("public") @db.VarChar(50)
+  createdAt  DateTime @default(now()) @db.DateTime(6)
+
+  @@index([userId])
+  @@index([date])
+  @@map("progress_photos")
+}
+
+model SavedPost {
+  id        String   @id @default(uuid())
+  userId    String
+  postId    String
+  savedAt   DateTime @default(now()) @db.DateTime(6)
+
+  @@unique([userId, postId])
+  @@index([userId])
+  @@map("saved_posts")
+}
+
+model BlockedUser {
+  id           String   @id @default(uuid())
+  userId       String
+  blockedUserId String
+  reason       String?  @db.Text
+  blockedAt    DateTime @default(now()) @db.DateTime(6)
+
+  @@unique([userId, blockedUserId])
+  @@index([userId])
+  @@index([blockedUserId])
+  @@map("blocked_users")
+}
+
+// ============================================
+// MISSING COLLECTIONS - Supplements
+// ============================================
+
+model Supplement {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String   @db.VarChar(255)
+  brand       String?  @db.VarChar(255)
+  dosage      String?  @db.VarChar(100)
+  time        String?  @db.VarChar(50)
+  frequency   String?  @db.VarChar(50)
+  notes       String?  @db.Text
+  startDate   DateTime @db.DateTime(6)
+  endDate     DateTime?
+  createdAt   DateTime @default(now()) @db.DateTime(6)
+  updatedAt   DateTime @updatedAt @db.DateTime(6)
+
+  logs SupplementHistory[]
+
+  @@index([userId])
+  @@map("supplements")
+}
+
+model SupplementHistory {
+  id           String   @id @default(uuid())
+  supplementId String
+  date         DateTime @db.DateTime(6)
+  taken        Boolean  @default(true)
+  time         String?  @db.VarChar(50)
+  notes        String?  @db.Text
+
+  supplement Supplement @relation(fields: [supplementId], references: [id], onDelete: Cascade)
+
+  @@unique([supplementId, date])
+  @@index([supplementId])
+  @@map("supplement_history")
+}
+
+model ShoppingList {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String   @default("Shopping List") @db.VarChar(255)
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.DateTime(6)
+  updatedAt DateTime @updatedAt @db.DateTime(6)
+
+  items ShoppingListItem[]
+
+  @@index([userId])
+  @@map("shopping_lists")
+}
+
+// ============================================
+// MISSING COLLECTIONS - System
+// ============================================
+
+model SystemConfig {
+  id                    String  @id @default(uuid())
+  version               String  @db.VarChar(50)
+  minimumSupportedVersion String @db.VarChar(50)
+  maintenanceMode       Boolean @default(false)
+  apiVersion            String  @default("1.0") @db.VarChar(50)
+  announcement          String? @db.Text
+  createdAt             DateTime @default(now()) @db.DateTime(6)
+  updatedAt             DateTime @updatedAt @db.DateTime(6)
+
+  @@map("system_config")
+}
+
+model FeatureFlag {
+  id              String   @id @default(uuid())
+  feature         String   @unique @db.VarChar(255)
+  enabled         Boolean  @default(false)
+  minimumVersion  String?  @db.VarChar(50)
+  description     String?  @db.Text
+  updatedAt       DateTime @updatedAt @db.DateTime(6)
+  createdAt       DateTime @default(now()) @db.DateTime(6)
+
+  @@index([feature])
+  @@index([enabled])
+  @@map("feature_flags")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  action      String   @db.VarChar(255)
+  entity      String   @db.VarChar(100)
+  entityId    String?
+  ipAddress   String?  @db.VarChar(50)
+  device      String?  @db.VarChar(255)
+  metadata    Json     @default("{}")
+  performedAt DateTime @default(now()) @db.DateTime(6)
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity, entityId])
+  @@index([performedAt])
+  @@map("audit_logs")
+}
+
+// ============================================
+// AUTH TOKENS & PUSH
+// ============================================
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique @db.VarChar(500)
+  expiresAt DateTime @db.DateTime(6)
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.DateTime(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("password_reset_tokens")
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique @db.VarChar(500)
+  expiresAt DateTime @db.DateTime(6)
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.DateTime(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("email_verification_tokens")
+}
+
+model PushToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique @db.VarChar(500)
+  platform  String   @db.VarChar(50)
+  createdAt DateTime @default(now()) @db.DateTime(6)
+  updatedAt DateTime @updatedAt @db.DateTime(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("push_tokens")
+}
+
+// ============================================
+// BADGES
+// ============================================
+
+model Badge {
+  id         String   @id @default(uuid())
+  key        String   @unique @db.VarChar(100)
+  name       String   @db.VarChar(255)
+  description String? @db.Text
+  icon       String?  @db.VarChar(500)
+  tier       String   @default("common") @db.VarChar(50)
+  xpReward   Int      @default(0)
+
+  userBadges UserBadge[]
+
+  @@index([key])
+  @@index([tier])
+  @@map("badges")
+}
+
+model UserBadge {
+  id        String   @id @default(uuid())
+  userId    String
+  badgeId   String
+  awardedAt DateTime @default(now()) @db.DateTime(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@index([badgeId])
+  @@map("user_badges")
+}
+
+// ============================================
+// HEALTH DATA (wearable sync)
+// ============================================
+
+model HealthData {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source     String   @db.VarChar(50)
+  metric     String   @db.VarChar(100)
+  value      Float
+  unit       String?  @db.VarChar(50)
+  recordedAt DateTime @default(now()) @db.DateTime(6)
+  createdAt  DateTime @default(now()) @db.DateTime(6)
+
+  @@index([userId, metric])
+  @@index([userId, recordedAt])
+  @@map("health_data")
+}
